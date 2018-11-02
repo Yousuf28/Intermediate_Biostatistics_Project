@@ -1,0 +1,531 @@
+---
+title: "Intermediate Biostatistics Project"
+output: 
+md_document:
+    variant: markdown_github
+    toc: yes
+    
+
+---
+
+
+# Load required library
+
+First lets start with loading tidyverse library.
+
+```{r  message=FALSE}
+library(tidyverse)
+```
+
+
+# Data Wrangling
+
+convert column to appropriate type and read the file
+
+```{r message=FALSE, warning=FALSE}
+types <- 'idddddddii'
+fram<- read_csv("framingham_200.csv", col_types = types)
+```
+
+
+select the columns that we need
+
+```{r message=FALSE, warning=FALSE}
+fram <- select(fram, TOTCHOL, AGE,
+               DIABP,CIGPDAY,BMI,HEARTRTE,
+               GLUCOSE,STROKE,CVD)
+```
+
+
+convert to tibble format
+
+```{r}
+fram <- as_tibble(fram)
+```
+
+## Check missing Values
+
+now see whether there are missing value in the **fram** data set
+
+```{r  message=FALSE}
+library(Amelia)
+```
+
+create missing map: in the map the yellow represents missing value
+
+```{r echo=TRUE, fig.height=4, fig.width=6, message=FALSE, warning=FALSE, fig.align='center'}
+missmap(fram, legend = T, col=c('yellow','black'), main = 'Missing value map')
+```
+
+Now drop the missing value, following code will drop all the rows that contain missing value.
+
+```{r}
+fram <- fram %>% drop_na()
+```
+
+ now check the missing value again.
+as you can see there are no more missing value in our data set
+
+```{r fig.height=4, fig.width=6, fig.align='center'}
+missmap(fram, legend = T, col=c('yellow','black'), main = 'Missing value map')
+```
+
+we don't need package **Amelia** anymore, so we will detach it
+
+```{r}
+detach('package:Amelia', unload = TRUE)
+```
+
+
+take a look to our data set
+
+```{r}
+glimpse(fram)
+```
+
+now convert stroke and cvd from integer to as factor
+
+```{r}
+fram$STROKE = as.factor(fram$STROKE)
+fram$CVD = as.factor(fram$CVD)
+```
+
+take a look again to our data set
+
+```{r}
+glimpse(fram)
+```
+
+# Exploratory Data Analysis
+
+## Plot
+
+### QQPLOT
+
+Now check the linearty plotting Q-Q plot 
+
+```{r  fig.align='center'}
+
+par(mfrow=c(3,3))
+q1<- qqnorm(fram$TOTCHOL, main = 'Normal Q-Q Plot for TOTCHOL')
+qqline(fram$TOTCHOL, col = "red")
+
+q2<- qqnorm(fram$AGE, main = 'Normal Q-Q Plot for AGE')
+qqline(fram$AGE, col = "red")
+
+q3 <- qqnorm(fram$DIABP, main = 'Normal Q-Q Plot for DIABP')
+qqline(fram$DIABP, col = "red")
+
+q4<- qqnorm(fram$CIGPDAY, main = 'Normal Q-Q Plot for CIGPDAY')
+qqline(fram$CIGPDAY, col = "red")
+
+q5<- qqnorm(fram$BMI, main = 'Normal Q-Q Plot for BMI')
+qqline(fram$BMI, col = "red")
+
+
+q6<- qqnorm(fram$HEARTRTE, main = 'Normal Q-Q Plot for HEARTRTE')
+qqline(fram$HEARTRTE, col = "red")
+
+q7 <- qqnorm(fram$GLUCOSE, main = 'Normal Q-Q Plot for GLUCOSE')
+qqline(fram$GLUCOSE, col = "red")
+
+```
+
+
+### QQPLOT in ggplot2
+
+
+
+
+```{r fig.height=4, fig.width=6, fig.align='center'}
+
+
+ggplot(fram) +
+  stat_qq(aes(sample = TOTCHOL))+
+  xlab('Theoretical Quantiles')+ ylab('Sample Quantiles')+ 
+  ggtitle('Q-Q plot for Serum Total Cholesterol')+
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+
+ggplot(fram) +
+  stat_qq(aes(sample = AGE))+
+  xlab('Theoretical Quantiles')+ ylab('Sample Quantiles')+ 
+  ggtitle('Q-Q plot for Age')+
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+ggplot(fram) +
+  stat_qq(aes(sample = DIABP))+
+  xlab('Theoretical Quantiles')+ ylab('Sample Quantiles')+ 
+  ggtitle('Q-Q plot for DIABP')+
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+
+ggplot(fram) +
+  stat_qq(aes(sample = CIGPDAY))+
+  xlab('Theoretical Quantiles')+ ylab('Sample Quantiles')+ 
+  ggtitle('Q-Q plot for CIGPDAY')+
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(fram) +
+  stat_qq(aes(sample = BMI))+
+  xlab('Theoretical Quantiles')+ ylab('Sample Quantiles')+ 
+  ggtitle('Q-Q plot for BMI')+
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+ggplot(fram) +
+  stat_qq(aes(sample = HEARTRTE))+
+  xlab('Theoretical Quantiles')+ ylab('Sample Quantiles')+ 
+  ggtitle('Q-Q plot for Heart Rate')+
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(fram) +
+  stat_qq(aes(sample = GLUCOSE))+
+  xlab('Theoretical Quantiles')+ ylab('Sample Quantiles')+ 
+  ggtitle('Q-Q plot for Glucose')+
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+```
+
+load RcolorBrewer package as we will need it 
+
+```{r message=FALSE, warning=FALSE}
+library(RColorBrewer)
+```
+
+### Boxplot
+
+Now we will check outlier using boxplot
+
+this one for only Total cholesterol
+```{r fig.height=4, fig.width=6, fig.align='center'}
+boxplot( fram$TOTCHOL,  col = brewer.pal(1, "Pastel2" ), boxwex=.4, xlab= 'TOTCHOL')
+```
+
+this one for other continuous variable
+
+```{r fig.height=4, fig.width=6, fig.align='center'}
+boxplot( fram$AGE, fram$DIABP, 
+         fram$CIGPDAY, fram$BMI,
+         fram$HEARTRTE, fram$GLUCOSE,
+         col = brewer.pal(6, "Pastel2" ), boxwex=.4,
+         names =c('AGE','DIABP','CIGPDAY',
+                  'BMI','HEARTRTE','GLUCOSE'))
+```
+
+now remove the stroke and cvd column  from **fram** because those are categorical valueand and save in **fram_hist** for drawing histogram and finding *skewness* and *kurtosis* value. we will also do shapiro-wilk test.
+
+
+```{r}
+fram_hist <- select(fram, -STROKE, -CVD)
+```
+
+##  skewness and kurtosis value
+
+```{r message=FALSE, warning=FALSE}
+library(moments)
+```
+
+```{r}
+lapply(fram_hist, skewness)
+lapply(fram_hist, kurtosis)
+```
+
+now do shapiro-wilk test
+```{r}
+lapply(fram_hist, shapiro.test)
+```
+
+```{r}
+detach('package:moments', unload = TRUE)
+```
+
+lets put together all thing in one slide.
+first load **psych** package
+
+```{r message=FALSE, warning=FALSE}
+library(psych)
+```
+
+```{r}
+names<- c('TOTCHOL: SK-0.405: ', 'AGE: SK-0.177 ','DIABP: SK- 0.42',
+          'CIGPDAY: SK-1.66','BMI: SK-0.84','HEARTRTE: SK-1.37','GLUCOSE: SK-1.64')
+
+
+colnames(fram_hist)<-
+  c('TOTCHOL \nSkewness-0.405 : Kurtosis:3.09: Shapiro-wilk test: 0.0058', 
+    'AGE\nSkewness:0.177 : Kurtosis:2.46: p-value: 0.099',
+    'DIABP\nSkewness:0.42: Kurtosis:3.14: p-value:0.00668' ,
+    'CIGPDAY\nSkewness:1.66: Kurtosis:5.07: p-value: 2.2e-16' ,
+    'BMI\nSkewness:0.84: Kurtosis:4.91: p-value:1.908e-06' ,
+    'HEARTRTE\nSkewness:1.37: Kurtosis:6.77: p-value:2.173e-10 ',
+    'GLUCOSE\nSkewness:1.64: Kurtosis:8.54: p-value:1.107e-11 ')
+
+
+
+fh <- as.matrix(fram_hist) # convert to matrix
+
+```
+
+```{r fig.align='center'}
+multi.hist(fh, bcol = 'skyblue', dcol = "red") 
+```
+
+
+```{r}
+detach('package:psych', unload = TRUE)
+```
+
+## Correlation Matrix
+
+load few more package for correlation matrix
+
+```{r message=FALSE, warning=FALSE}
+library(viridis)
+library(corrplot)
+library(corrgram)
+```
+
+
+
+```{r fig.height=4, fig.width=6, fig.align='center'}
+
+fram_corr <- select(fram, -STROKE, -CVD)
+
+cor.data <- cor(fram_corr)
+
+corrplot(cor.data, method = "number", col = brewer.pal(8,'Dark2')) #first one
+
+corrplot(cor.data, method = "color") #second one 
+
+corrgram(fram_corr, order = TRUE, 
+         lower.panel = panel.shade, 
+         upper.panel = panel.pie, 
+         text.panel = panel.txt) #third one
+
+```
+
+```{r}
+detach('package:viridis', unload = TRUE)
+detach('package:corrplot', unload = TRUE)
+detach('package:corrgram', unload = TRUE)
+```
+
+we can do correlation matrix few other way
+
+```{r fig.align='center'}
+pairs(  ~  TOTCHOL+
+        AGE +
+        DIABP+
+        BMI+
+        HEARTRTE+
+        GLUCOSE ,data = fram, main= 'Scatterplot Matrix')
+```
+
+
+```{r fig.align='center', fig.height=8, fig.width=12, message=FALSE, warning=FALSE}
+library(GGally)
+
+#fram_corr is data set without stroke and cvd column
+
+ggpairs(fram_corr)
+
+
+```
+
+```{r}
+detach('package:GGally', unload = TRUE)
+```
+
+
+ ### correlation test for each variable with p value
+ 
+```{r message=FALSE, warning=FALSE}
+library(Hmisc)
+```
+ 
+```{r}
+rcorr(as.matrix(fram_corr))
+```
+
+```{r}
+detach('package:Hmisc', unload = TRUE)
+```
+
+# Modeling
+
+ multiple linear regression with all independent variable
+
+```{r}
+model_all <- lm(TOTCHOL ~ 
+                  AGE +
+                  DIABP+
+                  CIGPDAY+
+                  BMI+
+                  HEARTRTE+
+                  GLUCOSE+
+                  STROKE+
+                  CVD,  data = fram) # you can also use `lm(TOTCHOL~ . , data=fram)`
+```
+
+```{r}
+summary(model_all)
+anova(model_all)
+```
+
+## Diagnostics
+
+for diagnostic plot
+```{r fig.height=4, fig.width=6, fig.align='center'}
+plot(model_all)
+```
+
+
+
+few other command that might be useful <br>
+
+* coefficients(model_all) # model coefficients  
+* confint(model_all, level=0.95) # CIs for model parameters   
+* fitted(model_all) # predicted values 
+* residuals(model_all) # residuals  
+* anova(model_all) # anova table   
+* vcov(model_all) # covariance matrix for model parameters  
+* influence(model_all) # regression diagnostics 
+
+
+since only age and diabp are significant, lets do model with only those two independent variable
+
+```{r}
+model_age_diabp<- lm(TOTCHOL~
+                       AGE+
+                       DIABP, data = fram)
+summary(model_age_diabp)
+anova(model_age_diabp)
+```
+
+for diagnostic plot 
+
+```{r fig.height=4, fig.width=6, fig.align='center'}
+plot(model_age_diabp)
+```
+
+## Log Transformation
+
+log transformation of variable and save in column
+
+```{r}
+fram <- fram %>% as_tibble() %>% 
+  mutate(TOTCHOL_log = log10(TOTCHOL),
+         DIABP_log = log10(DIABP),
+         
+         CIGPDAY_log = log10(CIGPDAY+1),
+         BMI_log = log10(BMI),
+         
+         HEARTRTE_log= log10(HEARTRTE),
+         GLUCOSE_log = log10(GLUCOSE))
+```
+
+Q-Q plot again
+
+```{r fig.align='center'}
+
+par(mfrow=c(2,3))
+q1<- qqnorm(fram$TOTCHOL_log, 
+            main="QQ-plot for total cholesterol")
+qqline(fram$TOTCHOL_log, col = "red")
+
+
+q2<- qqnorm(fram$BMI_log, main= 'QQ-plot for BMI')
+qqline(fram$BMI_log, col = "red")
+
+q3<- qqnorm(fram$DIABP_log, main = 'QQ-plot for DIABP')
+qqline(fram$DIABP_log, col = "red")
+
+q4<- qqnorm(fram$HEARTRTE_log, main = 'QQ-plot for HEART RATE')
+qqline(fram$HEARTRTE_log, col = "red")
+
+q5<- qqnorm(fram$GLUCOSE_log, main = 'QQ-plot for Glucose')
+qqline(fram$GLUCOSE_log, col = "red")
+
+q6<- qqnorm(fram$CIGPDAY_log, main = 'QQ-plot for CIGPDAY')
+qqline(fram$CIGPDAY_log, col = "red")
+
+```
+
+### model with log transformed data
+multiple linear regression with all independent variable
+
+```{r}
+model_all_log <- lm(TOTCHOL ~ 
+                  AGE +
+                  DIABP_log+
+                  CIGPDAY+
+                  BMI_log+
+                  HEARTRTE_log+
+                  GLUCOSE_log+
+                  STROKE+
+                  CVD,  data = fram)
+
+summary(model_all_log)
+anova(model_all_log)
+```
+
+
+```{r}
+model_age_diabp_log <- lm(TOTCHOL ~ 
+                            AGE +
+                            DIABP_log, 
+                          data = fram)
+
+summary(model_age_diabp_log)
+anova(model_age_diabp_log)
+```
+
+### multicolinearity
+
+```{r message=FALSE, warning=FALSE}
+library(car)
+```
+
+variance inflation factor(VIF)
+
+It quantifies the severity of multicollinearity in an ordinary least squares regression analysis.
+value less than 5 is acceptable and it (<5) means no significant multicolinearity between independent variables.
+
+
+```{r}
+vif(model_all)
+vif(model_all_log)
+vif(model_age_diabp)
+vif(model_age_diabp_log)
+```
+
+```{r}
+detach('package:car', unload = TRUE)
+```
+
+
+## model selection by AIC 
+
+```{r message=FALSE, warning=FALSE}
+library(MASS)
+```
+
+```{r}
+stepAIC(model_all_log, direction = 'backward')
+```
+
+```{r message=FALSE, warning=FALSE}
+detach('package:MASS', unload = TRUE)
+```
+
+# final model
+
+$$\hat{y}= -81.4884 + 0.8553 * AGE + 143.7133* log_{10}(DIABP)$$
+
+
+### The End
