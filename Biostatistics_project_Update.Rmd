@@ -8,6 +8,7 @@ output:
     theme: tactile
     toc: yes
     df_print: kable
+    keep_md: true
 ---
 
 ```{r setup, include=FALSE}
